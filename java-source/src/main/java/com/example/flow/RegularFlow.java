@@ -15,7 +15,7 @@ import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.core.utilities.ProgressTracker.Step;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import static com.example.contract.RegularContract.IOU_CONTRACT_ID;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
@@ -91,7 +91,7 @@ public class RegularFlow {
             progressTracker.setCurrentStep(GENERATING_TRANSACTION);
             // Generate an unsigned transaction.
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
-            IOUState iouState = new IOUState(iouValue, new Date(), viewerParty, me, otherParty, new UniqueIdentifier());
+            IOUState iouState = new IOUState(iouValue, System.currentTimeMillis(), viewerParty, me, otherParty, new UniqueIdentifier());
             final Command<RegularContract.Commands.Create> txCommand = new Command<>(
                     new RegularContract.Commands.Create(),
                     ImmutableList.of(iouState.getViewer().getOwningKey(), iouState.getLender().getOwningKey(), iouState.getBorrower().getOwningKey()));
@@ -113,8 +113,9 @@ public class RegularFlow {
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
             FlowSession otherPartySession = initiateFlow(otherParty);
+            FlowSession viewerPartySession = initiateFlow(viewerParty);
             final SignedTransaction fullySignedTx = subFlow(
-                    new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession), CollectSignaturesFlow.Companion.tracker()));
+                    new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(otherPartySession, viewerPartySession), CollectSignaturesFlow.Companion.tracker()));
 
             // Stage 5.
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);

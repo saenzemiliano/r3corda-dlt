@@ -10,8 +10,8 @@ import net.corda.core.schemas.MappedSchema;
 import net.corda.core.schemas.PersistentState;
 import net.corda.core.schemas.QueryableState;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class IOUState implements LinearState, QueryableState {
     private final Integer value;
-    private final Date date;
+    private final Long date;
     private final Party viewer;
     private final Party lender;
     private final Party borrower;
@@ -34,7 +34,7 @@ public class IOUState implements LinearState, QueryableState {
      * @param borrower the party receiving and approving the IOU.
      */
     public IOUState(Integer value,
-                    Date date,
+                    Long date,
                     Party viewer,
                     Party lender,
                     Party borrower,
@@ -49,7 +49,7 @@ public class IOUState implements LinearState, QueryableState {
     }
 
     public Integer getValue() { return value; }
-    public Date getDate() { return  date; }
+    public Long getDate() { return  date; }
     public Party getViewer() { return viewer; }
     public Party getLender() { return lender; }
     public Party getBorrower() { return borrower; }

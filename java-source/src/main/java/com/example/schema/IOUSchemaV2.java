@@ -5,7 +5,6 @@ import net.corda.core.schemas.MappedSchema;
 import net.corda.core.schemas.PersistentState;
 
 import javax.persistence.*;
-import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -23,11 +22,11 @@ public class IOUSchemaV2 extends MappedSchema {
         @Column(name = "lender") private final String lender;
         @Column(name = "borrower") private final String borrower;
         @Column(name = "value") private final int value;
-        @Column(name = "date_create") @Temporal(TemporalType.TIMESTAMP) private final Date date;
+        @Column(name = "date_create") private final Long date;
         @Column(name = "linear_id") private final UUID linearId;
 
 
-        public PersistentIOU(String viewer, String lender, String borrower, int value, Date date, UUID linearId) {
+        public PersistentIOU(String viewer, String lender, String borrower, int value, Long date, UUID linearId) {
             this.viewer = viewer;
             this.lender = lender;
             this.borrower = borrower;
@@ -62,7 +61,7 @@ public class IOUSchemaV2 extends MappedSchema {
             return value;
         }
 
-        public Date getDate() {
+        public Long getDate() {
             return date;
         }
 

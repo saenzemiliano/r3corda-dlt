@@ -96,7 +96,6 @@ public class CompensationFlow {
             // Stage 1.
             progressTracker.setCurrentStep(GENERATING_TRANSACTION);
             // Generate an unsigned transaction.
-            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             IPUState ipuState = new IPUState(ipuValue, viewerParty, payerParty, loanerParty, new UniqueIdentifier());
             final Command<RegularContract.Commands.Create> txCommand = new Command<>(
                     new RegularContract.Commands.Create(),

@@ -116,24 +116,24 @@ public class NodeApi {
     @Path("create-iou")
     public Response createIOU(@QueryParam("iouValue") int iouValue, @QueryParam("viewerPartyName") CordaX500Name viewerPartyName, @QueryParam("otherPartyName") CordaX500Name otherPartyName) throws InterruptedException, ExecutionException {
         if (iouValue <= 0) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'iouValue' must be non-negative.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'iouValue' must be non-negative.\n");
         }
         if (otherPartyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'otherPartyName' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'otherPartyName' missing or has wrong format.\n");
         }
 
         if (viewerPartyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'viewerPartyName' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'viewerPartyName' missing or has wrong format.\n");
         }
 
         final Party otherParty = rpcOps.wellKnownPartyFromX500Name(otherPartyName);
         if (otherParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + otherPartyName + "cannot be found.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Party named " + otherPartyName + "cannot be found.\n");
         }
 
         final Party viewerParty = rpcOps.wellKnownPartyFromX500Name(viewerPartyName);
         if (viewerParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + viewerPartyName + "cannot be found.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Party named " + viewerPartyName + "cannot be found.\n");
         }
 
         try {
@@ -143,12 +143,12 @@ public class NodeApi {
                     .get();
 
             final String msg = String.format("Transaction id %s committed to ledger.\n", signedTx.getId());
-            return Response.status(CREATED).entity(msg).build();
+            return ResponseStatus(CREATED, msg);
 
         } catch (Throwable ex) {
             final String msg = ex.getMessage();
             logger.error(ex.getMessage(), ex);
-            return Response.status(BAD_REQUEST).entity(msg).build();
+            return ResponseStatus(BAD_REQUEST, msg);
         }
     }
 	
@@ -247,25 +247,25 @@ public class NodeApi {
                                               @QueryParam("from") Date from,
                                               @QueryParam("to") Date to) throws NoSuchFieldException {
         if (from == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'from' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'from' missing or has wrong format.\n");
         }
 
         if (to == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'to' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'to' missing or has wrong format.\n");
         }
 
         if (from.getTime() > to.getTime()) {
-            return Response.status(BAD_REQUEST).entity("Invalid period, 'from' parameter is greater than 'to'.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Invalid period, 'from' parameter is greater than 'to'.\n");
         }
 
         final Party oneParty = rpcOps.wellKnownPartyFromX500Name(onePartyName);
         if (oneParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + onePartyName + "cannot be found.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Party named " + onePartyName + "cannot be found.\n");
         }
 
         final Party anotherParty = rpcOps.wellKnownPartyFromX500Name(anotherPartyName);
         if (anotherParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + anotherPartyName + "cannot be found.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Party named " + anotherPartyName + "cannot be found.\n");
         }
 
         try {
@@ -274,7 +274,7 @@ public class NodeApi {
         } catch (Exception ex) {
             final String msg = ex.getMessage();
             logger.error(ex.getMessage(), ex);
-            return Response.status(BAD_REQUEST).entity(msg).build();
+            return ResponseStatus(BAD_REQUEST, msg);
         }
     }
 
@@ -283,59 +283,53 @@ public class NodeApi {
     @PUT
     @Path("compensate")
     public Response createIPU(@QueryParam("viewerPartyName") CordaX500Name viewerPartyName,
-                              @QueryParam("onePartyName") CordaX500Name onePartyName,
-                              @QueryParam("anotherPartyName") CordaX500Name anotherPartyName,
+                              @QueryParam("counterPartyName") CordaX500Name counterPartyName,
                               @QueryParam("from") Date from,
                               @QueryParam("to") Date to) throws InterruptedException, ExecutionException {
 
+
+        Party me = rpcOps.nodeInfo().getLegalIdentities().get(0);
+
         if (from == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'from' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'from' missing or has wrong format.\n");
         }
 
         if (to == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'to' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'to' missing or has wrong format.\n");
         }
 
         if (from.getTime() > to.getTime()) {
-            return Response.status(BAD_REQUEST).entity("Invalid period, 'from' parameter is greater than 'to'.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Invalid period, 'from' parameter is greater than 'to'.\n");
         }
 
         if (viewerPartyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'viewerPartyName' missing or has wrong format.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'viewerPartyName' missing or has wrong format.\n");
         }
 
-        if (onePartyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'onePartyName' missing or has wrong format.\n").build();
-        }
-
-        if (anotherPartyName == null) {
-            return Response.status(BAD_REQUEST).entity("Query parameter 'anotherPartyName' missing or has wrong format.\n").build();
+        if (counterPartyName == null) {
+            return ResponseStatus(BAD_REQUEST, "Query parameter 'counterparty' missing or has wrong format.\n");
         }
 
         final Party viewerParty = rpcOps.wellKnownPartyFromX500Name(viewerPartyName);
         if (viewerParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + viewerPartyName + "cannot be found.\n").build();
+            return ResponseStatus(BAD_REQUEST, "Party named " + viewerPartyName + "cannot be found.\n");
         }
 
-        final Party oneParty = rpcOps.wellKnownPartyFromX500Name(onePartyName);
-        if (oneParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + onePartyName + "cannot be found.\n").build();
+        final Party counterPartyParty = rpcOps.wellKnownPartyFromX500Name(counterPartyName);
+        if (counterPartyParty == null) {
+            return ResponseStatus(BAD_REQUEST, "Party named " + counterPartyName + "cannot be found.\n");
         }
 
-        final Party anotherParty = rpcOps.wellKnownPartyFromX500Name(anotherPartyName);
-        if (anotherParty == null) {
-            return Response.status(BAD_REQUEST).entity("Party named " + anotherPartyName + "cannot be found.\n").build();
-        }
 
         try {
-            final List<StateAndRef<IOUState>> inputs = this.getIOUsByPartiesAndDates_(onePartyName, anotherPartyName, from, to);
+            final List<StateAndRef<IOUState>> inputs = this.getIOUsByPartiesAndDates_(counterPartyName, me.getName(), from, to);
 
             if (inputs == null || inputs.size() <= 0) {
-                return Response.status(BAD_REQUEST).entity("Nothing to compensate between " + onePartyName + " and " + anotherPartyName +".\n").build();
+                return ResponseStatus(BAD_REQUEST, "Nothing to compensate between " + counterPartyName + " and " + me +".\n");
             }
             final IPU ipu = XUtils.compensate(inputs);
             if (ipu == null ) {
-                return Response.status(BAD_REQUEST).entity("Something wrong happened. There are some monkeys that are working in it.\n").build();
+                return ResponseStatus(BAD_REQUEST, "Something wrong happened. There are some monkeys that are working in it.\n");
             }
             final Party payer = ipu.payer;
             final Party loaner = ipu.loaner;
@@ -346,12 +340,17 @@ public class NodeApi {
                     .get();
 
             final String msg = String.format("Transaction id %s committed to ledger.\n", signedTx.getId());
-            return Response.status(CREATED).entity(msg).build();
+            return ResponseStatus(CREATED, msg);
 
         } catch (Throwable ex) {
             final String msg = ex.getMessage();
             logger.error(ex.getMessage(), ex);
-            return Response.status(BAD_REQUEST).entity(ImmutableMap.of("message", msg)).build();
+            return ResponseStatus(BAD_REQUEST, msg);
         }
     }
+    
+    public static Response ResponseStatus(Response.StatusType statusType, String msg) {
+        //ImmutableMap.of("message", msg)
+        return Response.status(statusType).entity(msg ).build();
+    } 
 }
