@@ -20,6 +20,7 @@ import java.util.List;
  */
 public class IPUState implements LinearState, QueryableState {
     private final Integer value;
+    private final Long date;
     private final Party viewer;
     private final Party payer;
     private final Party loaner;
@@ -32,12 +33,14 @@ public class IPUState implements LinearState, QueryableState {
      * @param loaner the party receiving and approving the IPU.
      */
     public IPUState(Integer value,
+                    Long date,
                     Party viewer,
                     Party payer,
                     Party loaner,
                     UniqueIdentifier linearId)
     {
         this.value = value;
+        this.date = date;
         this.viewer =  viewer;
         this.payer = payer;
         this.loaner = loaner;
@@ -45,6 +48,7 @@ public class IPUState implements LinearState, QueryableState {
     }
 
     public Integer getValue() { return value; }
+    public Long getDate() { return date; }
     public Party getViewer() { return viewer; }
     public Party getPayer() { return payer; }
     public Party getLoaner() { return loaner; }
@@ -60,6 +64,7 @@ public class IPUState implements LinearState, QueryableState {
                     this.payer.getName().toString(),
                     this.loaner.getName().toString(),
                     this.value,
+                    this.date,
                     this.linearId.getId());
         } else {
             throw new IllegalArgumentException("Unrecognised schema $schema");
@@ -72,6 +77,6 @@ public class IPUState implements LinearState, QueryableState {
 
     @Override
     public String toString() {
-        return String.format("IPUState(value=%s, viewer=%s, payer=%s, loaner=%s, linearId=%s)", value, viewer, payer, loaner, linearId);
+        return String.format("IPUState(value=%s, date=%s, viewer=%s, payer=%s, loaner=%s, linearId=%s)", value, date, viewer, payer, loaner, linearId);
     }
 }

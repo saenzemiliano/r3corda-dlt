@@ -10,7 +10,6 @@ import net.corda.core.schemas.MappedSchema;
 import net.corda.core.schemas.PersistentState;
 import net.corda.core.schemas.QueryableState;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -78,6 +77,6 @@ public class IOUState implements LinearState, QueryableState {
 
     @Override
     public String toString() {
-        return String.format("IOUState(value=%s, viewer=%s, lender=%s, borrower=%s, linearId=%s)", value, viewer, lender, borrower, linearId);
+        return String.format("IOUState(value=%s, date=%s, viewer=%s, lender=%s, borrower=%s, linearId=%s)", value, date, viewer, lender, borrower, linearId);
     }
 }

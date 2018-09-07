@@ -18,20 +18,22 @@ public class IPUSchemaV2 extends MappedSchema {
     }
 
     @Entity
-    @Table(name = "iou_states")
+    @Table(name = "ipu_states")
     public static class PersistentIPU extends PersistentState {
         @Column(name = "viewer") private final String viewer;
         @Column(name = "payer") private final String payer;
         @Column(name = "loaner") private final String loaner;
         @Column(name = "value") private final int value;
+        @Column(name = "date") private final long date;
         @Column(name = "linear_id") private final UUID linearId;
 
 
-        public PersistentIPU(String viewer, String payer, String loaner, int value, UUID linearId) {
+        public PersistentIPU(String viewer, String payer, String loaner, int value, Long date, UUID linearId) {
             this.viewer = viewer;
             this.payer = payer;
             this.loaner = loaner;
             this.value = value;
+            this.date = date;
             this.linearId = linearId;
         }
 
@@ -41,6 +43,7 @@ public class IPUSchemaV2 extends MappedSchema {
             this.payer = null;
             this.loaner = null;
             this.value = 0;
+            this.date = 0;
             this.linearId = null;
         }
 
@@ -58,6 +61,10 @@ public class IPUSchemaV2 extends MappedSchema {
 
         public int getValue() {
             return value;
+        }
+
+        public Long getDate() {
+            return date;
         }
 
         public UUID getId() {

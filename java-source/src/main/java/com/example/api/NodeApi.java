@@ -202,8 +202,8 @@ public class NodeApi {
 
     private   List<StateAndRef<IOUState>>  getIOUsByPartiesAndDates_( CordaX500Name onePartyName,
                                                                       CordaX500Name anotherPartyName,
-                                                                      Date from,
-                                                                      Date to) throws Exception {
+                                                                      Long from,
+                                                                      Long to) throws Exception {
 
         final Party oneParty = rpcOps.wellKnownPartyFromX500Name(onePartyName);
         if (oneParty == null) {
@@ -244,8 +244,8 @@ public class NodeApi {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getIOUsByPartiesAndDates( @QueryParam("onePartyName") CordaX500Name onePartyName,
                                               @QueryParam("anotherPartyName") CordaX500Name anotherPartyName,
-                                              @QueryParam("from") Date from,
-                                              @QueryParam("to") Date to) throws NoSuchFieldException {
+                                              @QueryParam("from") Long from,
+                                              @QueryParam("to") Long to) throws NoSuchFieldException {
         if (from == null) {
             return ResponseStatus(BAD_REQUEST, "Query parameter 'from' missing or has wrong format.\n");
         }
@@ -254,7 +254,7 @@ public class NodeApi {
             return ResponseStatus(BAD_REQUEST, "Query parameter 'to' missing or has wrong format.\n");
         }
 
-        if (from.getTime() > to.getTime()) {
+        if (from > to) {
             return ResponseStatus(BAD_REQUEST, "Invalid period, 'from' parameter is greater than 'to'.\n");
         }
 
@@ -284,8 +284,8 @@ public class NodeApi {
     @Path("compensate")
     public Response createIPU(@QueryParam("viewerPartyName") CordaX500Name viewerPartyName,
                               @QueryParam("counterPartyName") CordaX500Name counterPartyName,
-                              @QueryParam("from") Date from,
-                              @QueryParam("to") Date to) throws InterruptedException, ExecutionException {
+                              @QueryParam("from") Long from,
+                              @QueryParam("to") Long to) throws InterruptedException, ExecutionException {
 
 
         Party me = rpcOps.nodeInfo().getLegalIdentities().get(0);
@@ -298,7 +298,7 @@ public class NodeApi {
             return ResponseStatus(BAD_REQUEST, "Query parameter 'to' missing or has wrong format.\n");
         }
 
-        if (from.getTime() > to.getTime()) {
+        if (from > to) {
             return ResponseStatus(BAD_REQUEST, "Invalid period, 'from' parameter is greater than 'to'.\n");
         }
 
@@ -327,7 +327,7 @@ public class NodeApi {
             if (inputs == null || inputs.size() <= 0) {
                 return ResponseStatus(BAD_REQUEST, "Nothing to compensate between " + counterPartyName + " and " + me +".\n");
             }
-            final IPU ipu = XUtils.compensate(inputs);
+            final IPU ipu = XUtils.compensate(inputs, me, counterPartyParty);
             if (ipu == null ) {
                 return ResponseStatus(BAD_REQUEST, "Something wrong happened. There are some monkeys that are working in it.\n");
             }

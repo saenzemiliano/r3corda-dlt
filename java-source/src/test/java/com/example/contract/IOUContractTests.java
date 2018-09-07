@@ -8,7 +8,7 @@ import net.corda.testing.core.TestIdentity;
 import net.corda.testing.node.MockServices;
 import org.junit.Test;
 
-import static com.example.contract.RegularContract.IOU_CONTRACT_ID;
+import static com.example.contract.CompensationContract.COMPENSATION_CONTRACT_ID;
 import static net.corda.testing.node.NodeTestUtils.ledger;
 
 public class IOUContractTests {
@@ -22,9 +22,9 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
                 tx.fails();
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new RegularContract.Commands.Create());
+                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new CompensationContract.Commands.Create());
                 tx.verifies();
                 return null;
             });
@@ -37,9 +37,9 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.input(IOU_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou, null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new RegularContract.Commands.Create());
+                tx.input(COMPENSATION_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou, null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new CompensationContract.Commands.Create());
                 tx.failsWith("No inputs should be consumed when issuing an IOU.");
                 return null;
             });
@@ -52,9 +52,9 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new RegularContract.Commands.Create());
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new CompensationContract.Commands.Create());
                 tx.failsWith("Only one output state should be created.");
                 return null;
             });
@@ -67,8 +67,8 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(miniCorp.getPublicKey(), new RegularContract.Commands.Create());
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(miniCorp.getPublicKey(), new CompensationContract.Commands.Create());
                 tx.failsWith("All of the participants must be signers.");
                 return null;
             });
@@ -81,8 +81,8 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(megaCorp.getPublicKey(), new RegularContract.Commands.Create());
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(megaCorp.getPublicKey(), new CompensationContract.Commands.Create());
                 tx.failsWith("All of the participants must be signers.");
                 return null;
             });
@@ -95,8 +95,8 @@ public class IOUContractTests {
         Integer iou = 1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), megaCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new RegularContract.Commands.Create());
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou,  null,viewerCorp.getParty(), megaCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new CompensationContract.Commands.Create());
                 tx.failsWith("The lender and the borrower cannot be the same entity.");
                 return null;
             });
@@ -109,8 +109,8 @@ public class IOUContractTests {
         Integer iou = -1;
         ledger(ledgerServices, (ledger -> {
             ledger.transaction(tx -> {
-                tx.output(IOU_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
-                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new RegularContract.Commands.Create());
+                tx.output(COMPENSATION_CONTRACT_ID, new IOUState(iou, null, viewerCorp.getParty(), miniCorp.getParty(), megaCorp.getParty(), new UniqueIdentifier()));
+                tx.command(ImmutableList.of(megaCorp.getPublicKey(), miniCorp.getPublicKey()), new CompensationContract.Commands.Create());
                 tx.failsWith("The IOU's value must be non-negative.");
                 return null;
             });

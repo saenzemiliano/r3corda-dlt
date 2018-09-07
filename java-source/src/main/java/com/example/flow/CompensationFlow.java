@@ -1,7 +1,8 @@
 package com.example.flow;
-
+import com.example.common.XParty;
+import com.example.contract.CompensationContract;
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.RegularContract;
+import com.example.state.IOUState;
 import com.example.state.IPUState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -18,8 +19,10 @@ import net.corda.core.utilities.ProgressTracker;
 import net.corda.core.utilities.ProgressTracker.Step;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.example.contract.CompensationContract.IPU_CONTRACT_ID;
+import static com.example.contract.CompensationContract.COMPENSATION_CONTRACT_ID;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 /**
@@ -38,7 +41,7 @@ public class CompensationFlow {
     @StartableByRPC
     public static class Initiator extends FlowLogic<SignedTransaction> {
 
-        private final List<StateAndRef<IPUState>> stateAndRefs;
+        private final List<StateAndRef<IOUState>> stateAndRefs;
         private final Party viewerParty;
         private final Party payerParty;
         private final Party loanerParty;
@@ -71,7 +74,7 @@ public class CompensationFlow {
                 FINALISING_TRANSACTION
         );
 
-        public Initiator(List<StateAndRef<IPUState>> stateAndRefs, Party viewerParty, Party payerParty, Party loanerParty, int ipuValue) {
+        public Initiator(List<StateAndRef<IOUState>> stateAndRefs, Party viewerParty, Party payerParty, Party loanerParty, int ipuValue) {
             this.stateAndRefs = stateAndRefs;
             this.viewerParty = viewerParty;
             this.payerParty = payerParty;
@@ -96,18 +99,19 @@ public class CompensationFlow {
             // Stage 1.
             progressTracker.setCurrentStep(GENERATING_TRANSACTION);
             // Generate an unsigned transaction.
-            IPUState ipuState = new IPUState(ipuValue, viewerParty, payerParty, loanerParty, new UniqueIdentifier());
-            final Command<RegularContract.Commands.Create> txCommand = new Command<>(
-                    new RegularContract.Commands.Create(),
-                    ImmutableList.of(viewerParty.getOwningKey(), payerParty.getOwningKey(), loanerParty.getOwningKey()));
+            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
+            IPUState ipuState = new IPUState(ipuValue, System.currentTimeMillis(), viewerParty, payerParty, loanerParty, new UniqueIdentifier());
             final TransactionBuilder txBuilder = new TransactionBuilder(notary);
+            final Command<CompensationContract.Commands.Compensate> txCommand = new Command<>(
+                    new CompensationContract.Commands.Compensate(),
+                    ImmutableList.of(viewerParty.getOwningKey(), payerParty.getOwningKey(), loanerParty.getOwningKey()));
 
             // Add IOUs
-            for (StateAndRef<IPUState> stateAndRef : stateAndRefs) {
+            for (StateAndRef<IOUState> stateAndRef : stateAndRefs) {
                 txBuilder.addInputState(stateAndRef);
             }
             // Add IPU
-            txBuilder.addOutputState(ipuState, IPU_CONTRACT_ID);
+            txBuilder.addOutputState(ipuState, COMPENSATION_CONTRACT_ID);
             txBuilder.addCommand(txCommand);
 
             // Stage 2.
@@ -123,12 +127,19 @@ public class CompensationFlow {
             // Stage 4.
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparties, and receive it back with their signature.
-            FlowSession viewerPartySession = initiateFlow(viewerParty);
-            FlowSession payerPartySession = initiateFlow(payerParty);
-            FlowSession loanerPartySession = initiateFlow(loanerParty);
-            final SignedTransaction fullySignedTx = subFlow(
-                    new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(viewerPartySession, payerPartySession, loanerPartySession), CollectSignaturesFlow.Companion.tracker()));
-
+            SignedTransaction fullySignedTxTemp = null;
+            if(XParty.equal(me, viewerParty)) {
+                FlowSession loanerPartySession = initiateFlow(loanerParty);
+                FlowSession payerPartSession = initiateFlow(payerParty);
+                fullySignedTxTemp = subFlow(
+                        new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(payerPartSession, loanerPartySession), CollectSignaturesFlow.Companion.tracker()));
+            } else {
+                FlowSession viewerPartySession = initiateFlow(viewerParty);
+                FlowSession counterPartySession = initiateFlow((XParty.equal(me, payerParty) ? loanerParty : payerParty ));
+                fullySignedTxTemp = subFlow(
+                        new CollectSignaturesFlow(partSignedTx, ImmutableSet.of(viewerPartySession, counterPartySession), CollectSignaturesFlow.Companion.tracker()));
+            }
+            final SignedTransaction fullySignedTx = fullySignedTxTemp;
             // Stage 5.
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);
             // Notarise and record the transaction in both parties' vaults.
@@ -138,6 +149,8 @@ public class CompensationFlow {
 
     @InitiatedBy(Initiator.class)
     public static class Acceptor extends FlowLogic<SignedTransaction> {
+
+        private final static Logger logger = Logger.getLogger(Acceptor.class.getName());
 
         private final FlowSession otherPartyFlow;
 
@@ -156,13 +169,10 @@ public class CompensationFlow {
                 @Override
                 protected void checkTransaction(SignedTransaction stx) {
                     requireThat(require -> {
-                        LedgerTransaction ltx;
-                        try {
-                            ltx =  stx.toLedgerTransaction(getServiceHub());
-                        } catch (Exception ex) {
-                            ltx = null;
-                        }
-                        require.using("SignedTransaction can't become to LedgerTransaction.", ltx == null);
+                        ContractState output = stx.getTx().getOutputs().get(0).getData();
+                        require.using("This must be an IPU transaction.", output instanceof IPUState);
+                        IPUState iou = (IPUState) output;
+                        require.using("I won't accept IPUs with a value lower 0.", iou.getValue() >= 0);
                         return null;
                     });
                 }

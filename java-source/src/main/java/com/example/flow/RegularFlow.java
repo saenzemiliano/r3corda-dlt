@@ -1,7 +1,7 @@
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.RegularContract;
+import com.example.contract.CompensationContract;
 import com.example.state.IOUState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -15,9 +15,7 @@ import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.core.utilities.ProgressTracker.Step;
 
-import java.time.LocalDateTime;
-
-import static com.example.contract.RegularContract.IOU_CONTRACT_ID;
+import static com.example.contract.CompensationContract.COMPENSATION_CONTRACT_ID;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 /**
@@ -92,11 +90,11 @@ public class RegularFlow {
             // Generate an unsigned transaction.
             Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             IOUState iouState = new IOUState(iouValue, System.currentTimeMillis(), viewerParty, me, otherParty, new UniqueIdentifier());
-            final Command<RegularContract.Commands.Create> txCommand = new Command<>(
-                    new RegularContract.Commands.Create(),
+            final Command<CompensationContract.Commands.Create> txCommand = new Command<>(
+                    new CompensationContract.Commands.Create(),
                     ImmutableList.of(iouState.getViewer().getOwningKey(), iouState.getLender().getOwningKey(), iouState.getBorrower().getOwningKey()));
             final TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                    .addOutputState(iouState, IOU_CONTRACT_ID)
+                    .addOutputState(iouState, COMPENSATION_CONTRACT_ID)
                     .addCommand(txCommand);
 
             // Stage 2.
